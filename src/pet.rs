@@ -1,20 +1,21 @@
+use crate::cake::Cake;
 use rand::{seq::SliceRandom, Rng};
 
 const STRENGTHS: [&str; 3] = ["weak", "normal", "strong"];
 const IMAGE_TYPES: [&str; 4] = ["dinosaur", "dog", "pixel_dog-ish", "squid"];
 const NUMBER_OF_TOMBSTONE_VARIATIONS: i8 = 3;
 
-const BASE_MAX_BOREDOM: i8 = 100;
-const BASE_MAX_HUNGER: i8 = 100;
-const BASE_MAX_HEALTH: i16 = 100;
-const BASE_MAX_SOUNDS: i8 = 5;
+const BASE_MAX_BOREDOM: u8 = 100;
+const BASE_MAX_HUNGER: u8 = 100;
+const BASE_MAX_HEALTH: u16 = 100;
+const BASE_MAX_SOUNDS: u8 = 5;
 
 // Note that the boredom limit is determined randomly in the default implementation of Pet.
-const BASE_HUNGER_LIMIT: i8 = 80;
-const BASE_ANGER_LIMIT: i8 = 90;
+const BASE_HUNGER_LIMIT: u8 = 80;
+const BASE_ANGER_LIMIT: u8 = 90;
 
-const BASE_BOREDOM_RATE: i8 = 4;
-const BASE_HUNGER_RATE: i8 = 4;
+const BASE_BOREDOM_RATE: u8 = 4;
+const BASE_HUNGER_RATE: u8 = 4;
 
 #[derive(Debug)]
 pub struct Pet {
@@ -23,33 +24,33 @@ pub struct Pet {
     image_type: String,
     tombstone_type: String,
 
-    max_boredom: i8,
-    max_hunger: i8,
-    max_health: i16,
-    max_sounds: i8,
+    max_boredom: u8,
+    max_hunger: u8,
+    max_health: u16,
+    max_sounds: u8,
 
-    boredom: i8,
-    hunger: i8,
-    health: i16,
+    boredom: u8,
+    hunger: u8,
+    health: u16,
     sounds: Vec<String>,
 
-    boredom_limit: i8,
-    hunger_limit: i8,
-    anger_limit: i8,
+    boredom_limit: u8,
+    hunger_limit: u8,
+    anger_limit: u8,
 
-    boredom_rate: i8,
-    hunger_rate: i8,
+    boredom_rate: u8,
+    hunger_rate: u8,
 
-    ticks_survived: i16,
+    ticks_survived: u16,
     reason_for_death: String,
 }
 
 impl Default for Pet {
     fn default() -> Self {
         let strength: String = STRENGTHS.choose(&mut rand::thread_rng()).unwrap().to_string();
-        let max_health: i16;
-        let boredom_limit: i8;
-        let hunger_rate: i8;
+        let max_health: u16;
+        let boredom_limit: u8;
+        let hunger_rate: u8;
 
         match strength.as_str() {
             "weak" => {
@@ -95,5 +96,12 @@ impl Default for Pet {
             ticks_survived: 0,
             reason_for_death: String::new(),
         }
+    }
+}
+
+impl Pet {
+    pub fn eat(&mut self, cake: &Cake) {
+        self.hunger = u8::try_from(std::cmp::max(0, usize::from(self.hunger) - cake.get_hunger_replenished())).ok().unwrap();
+        self.health = u16::try_from(std::cmp::min(usize::from(self.max_health), usize::from(self.health) + cake.get_health_replenished())).ok().unwrap();
     }
 }
