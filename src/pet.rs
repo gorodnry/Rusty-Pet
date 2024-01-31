@@ -1,7 +1,7 @@
 use crate::cake::Cake;
 use rand::{seq::SliceRandom, Rng};
 
-const STRENGTHS: [&str; 3] = ["weak", "normal", "strong"];
+const STRENGTHS: [Strength; 3] = [Strength::Weak, Strength::Normal, Strength::Strong];
 const IMAGE_TYPES: [&str; 4] = ["dinosaur", "dog", "pixel_dog-ish", "squid"];
 const NUMBER_OF_TOMBSTONE_VARIATIONS: i8 = 3;
 
@@ -17,10 +17,15 @@ const BASE_ANGER_LIMIT: u8 = 90;
 const BASE_BOREDOM_RATE: u8 = 4;
 const BASE_HUNGER_RATE: u8 = 4;
 
+enum Strength {
+    Weak,
+    Normal,
+    Strong
+}
+
 #[derive(Debug)]
 pub struct Pet {
     name: String,
-    strength: String,
     image_type: String,
     tombstone_type: String,
 
@@ -47,32 +52,31 @@ pub struct Pet {
 
 impl Default for Pet {
     fn default() -> Self {
-        let strength: String = STRENGTHS.choose(&mut rand::thread_rng()).unwrap().to_string();
+        let strength: &Strength = STRENGTHS.choose(&mut rand::thread_rng()).unwrap();
         let max_health: u16;
         let boredom_limit: u8;
         let hunger_rate: u8;
 
-        match strength.as_str() {
-            "weak" => {
+        match strength {
+            Strength::Weak => {
                 max_health = BASE_MAX_HEALTH / 2;
                 boredom_limit = BASE_MAX_BOREDOM - 1;
                 hunger_rate = BASE_HUNGER_RATE;
             }
-            "strong" => {
-                max_health = BASE_MAX_HEALTH * 2;
-                boredom_limit = rand::thread_rng().gen_range(50..90);
-                hunger_rate = BASE_HUNGER_RATE * 2;
-            }
-            _ => {
+            Strength::Normal => {
                 max_health = BASE_MAX_HEALTH;
                 boredom_limit = rand::thread_rng().gen_range(50..90);
                 hunger_rate = BASE_HUNGER_RATE;
+            }
+            Strength::Strong => {
+                max_health = BASE_MAX_HEALTH * 2;
+                boredom_limit = rand::thread_rng().gen_range(50..90);
+                hunger_rate = BASE_HUNGER_RATE * 2;
             }
         }
 
         Pet {
             name: String::new(),
-            strength,
             image_type: IMAGE_TYPES.choose(&mut rand::thread_rng()).unwrap().to_string(),
             tombstone_type: rand::thread_rng().gen_range(1..=NUMBER_OF_TOMBSTONE_VARIATIONS).to_string(),
 
