@@ -109,6 +109,16 @@ impl Default for Pet {
 }
 
 impl Pet {
+    pub fn new(name: String) -> Self {
+        let mut new_pet = Pet::default();
+        new_pet.name = name;
+        new_pet
+    }
+
+    fn is_dead(&self) -> bool {
+        self.health == 0
+    }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }
@@ -125,6 +135,34 @@ impl Pet {
         self.max_health
     }
 
+    pub fn get_sounds(&self) -> &Vec<String> {
+        &self.sounds
+    }
+
+    pub fn get_ticks_survived(&self) -> u16 {
+        self.ticks_survived
+    }
+
+    pub fn get_nutritional_info(&self) -> Cake {
+        let hunger_replenished: usize;
+        let health_replenished: usize;
+
+        if self.is_dead() {
+            hunger_replenished = 0;
+            health_replenished = 0;
+        } else {
+            hunger_replenished = usize::from(std::cmp::max(self.hunger_limit - self.hunger, 20));
+            health_replenished = usize::from(std::cmp::max(self.max_health - self.health, 20));
+        }
+
+        Cake::new(
+            format!("{}Cake", self.name),
+            hunger_replenished,
+            health_replenished,
+            0,
+        )
+    }
+
     pub fn get_reason_for_death(self) -> String {
         if self.health != 0 {
             return String::from("I'm still alive :eye:");
@@ -134,6 +172,10 @@ impl Pet {
     }
 
     pub fn change_name(&mut self, new_name: String) {
+        if self.is_dead() {
+            return;
+        }
+
         if !new_name.trim().is_empty() {
             self.name = new_name;
         }
@@ -209,7 +251,11 @@ impl Pet {
         rate
     }
 
-    pub fn eat(&mut self, cake: &Cake) {
+    pub fn feed(&mut self, cake: &Cake) {
+        if self.is_dead() {
+            return;
+        }
+
         self.hunger = u8::try_from(std::cmp::max(
             0,
             usize::from(self.hunger) - cake.get_hunger_replenished(),
@@ -222,6 +268,79 @@ impl Pet {
         ))
         .ok()
         .unwrap();
+    }
+
+    pub fn consume(&mut self, pet: &Self) {
+        if self.is_dead() {
+            return;
+        }
+
+        self.feed(&pet.get_nutritional_info());
+        self.boredom = 0;
+    }
+
+    pub fn be_consumed(&mut self, name_of_consumer: String) {
+        if self.is_dead() {
+            return;
+        }
+
+        self.die(format!("Eaten by {}", name_of_consumer));
+    }
+
+    pub fn can_train(&mut self) {}
+
+    pub fn train(&mut self, new_sound: String) -> Option<String> {
+        if self.is_dead() {
+            return Option::Some(format!("{} is dead!", self.name));
+        }
+
+        if new_sound.trim().is_empty() {
+            return Option::Some(String::from("no sound provided..."));
+        }
+
+        if self.sounds.len() >= usize::from(self.max_sounds) {
+            return Option::Some(format!("{}'s memory is full!'", self.name));
+        }
+
+        if self.sounds.contains(&new_sound.trim().to_string()) {
+            return Option::Some(format!("{} already knows {}...", self.name, new_sound));
+        }
+
+        self.sounds.push(new_sound.trim().to_string());
+        self.boredom = std::cmp::max(self.boredom - 50, 0);
+        self.hunger = std::cmp::min(self.hunger + 25, self.max_hunger);
+
+        return Option::None;
+    }
+
+    pub fn tick(&mut self) {
+        if self.is_dead() {
+            return;
+        }
+
+        self.boredom = std::cmp::min(self.boredom + self.boredom_rate, self.max_boredom);
+        self.hunger = std::cmp::min(self.hunger + self.hunger_rate, self.max_hunger);
+
+        if self.get_status_report().hunger_status_message == "starving" {
+            self.health = std::cmp::max(self.health - u16::from(self.hunger_rate / 2), 0);
+        }
+
+        self.ticks_survived += 1;
+
+        if self.health == 0 {
+            self.die(String::from("Died of starvation"));
+        }
+    }
+
+    fn die(&mut self, reason_for_death: String) {
+        if !self.reason_for_death.is_empty() {
+            return;
+        }
+
+        self.health = 0;
+        self.hunger = 0;
+        self.boredom = 0;
+        self.reason_for_death = reason_for_death;
     }
 }
 
