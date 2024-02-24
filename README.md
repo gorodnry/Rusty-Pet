@@ -1,5 +1,5 @@
 # Rusty-Pet
-A simple space-invaders type game (in the sense that it is only a matter of time before you lose). How long can you keep your pets alive..? Inspiration for this project can be found [here](https://onslowcollege.github.io/2022/13dtc/programming/virtual-pet) (hopefully... at least it was there as of 08/06/2023...). This repository is essentially a cleaner remake of my [Virtual-Pet](https://github.com/gorodnry/Virtual-Pet "https://github.com/gorodonry/Virtual-Pet") repository, written in Rust instead of C#.
+A simple space-invaders type game (in the sense that it is only a matter of time before you lose). How long can you keep your pets alive..? Inspiration for this project can be found [here](https://onslowcollege.github.io/2022/13dtc/programming/virtual-pet) (hopefully... at least it was there as of 08/06/2023... if it isn't, I forked the repo the inspiration was in and the relevant page is [here](https://github.com/gorodonry/OnslowCollege.github.io/blob/master/13dtc/programming/virtual-pet.md)). This repository is essentially a cleaner remake of my [Virtual-Pet](https://github.com/gorodnry/Virtual-Pet "https://github.com/gorodonry/Virtual-Pet") repository, written in Rust instead of C#.
 
 ### Work in progress - planning on having a proper go in Feb '24 :)
 
