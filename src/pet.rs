@@ -44,8 +44,8 @@ pub struct Pet {
     hunger_limit: u8,
     anger_limit: u8,
 
-    boredom_rate: u8,
-    hunger_rate: u8,
+    base_boredom_rate: u8,
+    base_hunger_rate: u8,
 
     ticks_survived: u16,
     reason_for_death: String,
@@ -56,23 +56,23 @@ impl Default for Pet {
         let strength: &Strength = STRENGTHS.choose(&mut rand::thread_rng()).unwrap();
         let max_health: u16;
         let boredom_limit: u8;
-        let hunger_rate: u8;
+        let base_hunger_rate: u8;
 
         match strength {
             Strength::Weak => {
                 max_health = BASE_MAX_HEALTH / 2;
                 boredom_limit = BASE_MAX_BOREDOM - 1;
-                hunger_rate = BASE_HUNGER_RATE;
+                base_hunger_rate = BASE_HUNGER_RATE;
             }
             Strength::Normal => {
                 max_health = BASE_MAX_HEALTH;
                 boredom_limit = rand::thread_rng().gen_range(50..90);
-                hunger_rate = BASE_HUNGER_RATE;
+                base_hunger_rate = BASE_HUNGER_RATE;
             }
             Strength::Strong => {
                 max_health = BASE_MAX_HEALTH * 2;
                 boredom_limit = rand::thread_rng().gen_range(50..90);
-                hunger_rate = BASE_HUNGER_RATE * 2;
+                base_hunger_rate = BASE_HUNGER_RATE * 2;
             }
         }
 
@@ -100,8 +100,8 @@ impl Default for Pet {
             hunger_limit: BASE_HUNGER_LIMIT,
             anger_limit: BASE_ANGER_LIMIT,
 
-            boredom_rate: BASE_BOREDOM_RATE,
-            hunger_rate,
+            base_boredom_rate: BASE_BOREDOM_RATE,
+            base_hunger_rate,
 
             ticks_survived: 0,
             reason_for_death: String::new(),
@@ -142,6 +142,42 @@ impl Pet {
 
     pub fn get_ticks_survived(&self) -> u16 {
         self.ticks_survived
+    }
+
+    fn increase_boredom(&mut self, amount: u8) {
+        self.boredom = std::cmp::min(self.max_boredom, self.boredom + amount);
+    }
+
+    fn decrease_boredom(&mut self, amount: u8) {
+        if self.boredom >= amount {
+            self.boredom -= amount;
+        } else {
+            self.boredom = 0;
+        }
+    }
+
+    fn increase_hunger(&mut self, amount: u8) {
+        self.hunger = std::cmp::min(self.max_hunger, self.hunger + amount);
+    }
+
+    fn decrease_hunger(&mut self, amount: u8) {
+        if self.hunger >= amount {
+            self.hunger -= amount;
+        } else {
+            self.hunger = 0;
+        }
+    }
+
+    fn increase_health(&mut self, amount: u16) {
+        self.health = std::cmp::min(self.max_health, self.health + amount);
+    }
+
+    fn decrease_health(&mut self, amount: u16) {
+        if self.health >= amount {
+            self.health -= amount;
+        } else {
+            self.health = 0;
+        }
     }
 
     pub fn get_nutritional_info(&self) -> Cake {
@@ -228,14 +264,14 @@ impl Pet {
 
     fn get_current_boredom_rate(&self) -> u8 {
         if self.boredom > self.boredom_limit {
-            return self.boredom_rate * 2;
+            return self.base_boredom_rate * 2;
         }
 
-        self.boredom_rate
+        self.base_boredom_rate
     }
 
     fn get_current_hunger_rate(&self) -> u8 {
-        let mut rate: u8 = self.hunger_rate;
+        let mut rate: u8 = self.base_hunger_rate;
 
         if self.health <= self.max_health / 4 {
             rate /= 2;
@@ -256,15 +292,15 @@ impl Pet {
         if self.is_dead() {
             return;
         }
-        
+
         if cake.get_hunger_replenished().is_finite() {
-            self.hunger = std::cmp::max(0, self.hunger - cake.get_hunger_replenished().finite().unwrap());
+            self.decrease_hunger(cake.get_hunger_replenished().finite().unwrap());
         } else {
             self.hunger = 0;
         }
 
         if cake.get_health_replenished().is_finite() {
-            self.health = std::cmp::min(self.max_health, self.health + cake.get_health_replenished().finite().unwrap());
+            self.increase_health(cake.get_health_replenished().finite().unwrap());
         } else {
             self.health = self.max_health;
         }
@@ -305,8 +341,8 @@ impl Pet {
         }
 
         self.sounds.push(new_sound.trim().to_string());
-        self.boredom = std::cmp::max(self.boredom - 50, 0);
-        self.hunger = std::cmp::min(self.hunger + 25, self.max_hunger);
+        self.decrease_boredom(50);
+        self.increase_hunger(25);
 
         return Option::None;
     }
@@ -316,11 +352,11 @@ impl Pet {
             return;
         }
 
-        self.boredom = std::cmp::min(self.boredom + self.boredom_rate, self.max_boredom);
-        self.hunger = std::cmp::min(self.hunger + self.hunger_rate, self.max_hunger);
+        self.increase_boredom(self.get_current_boredom_rate());
+        self.increase_hunger(self.get_current_hunger_rate());
 
         if self.get_status_report().hunger_status_message == "starving" {
-            self.health = std::cmp::max(self.health - u16::from(self.hunger_rate / 2), 0);
+            self.decrease_health(u16::from(self.get_current_hunger_rate() / 2));
         }
 
         self.ticks_survived += 1;
