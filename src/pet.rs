@@ -1,4 +1,5 @@
 use crate::cake::Cake;
+use infinitable::Infinitable;
 use rand::{seq::SliceRandom, Rng};
 
 const STRENGTHS: [Strength; 3] = [Strength::Weak, Strength::Normal, Strength::Strong];
@@ -144,21 +145,21 @@ impl Pet {
     }
 
     pub fn get_nutritional_info(&self) -> Cake {
-        let hunger_replenished: usize;
-        let health_replenished: usize;
+        let hunger_replenished: u8;
+        let health_replenished: u16;
 
         if self.is_dead() {
             hunger_replenished = 0;
             health_replenished = 0;
         } else {
-            hunger_replenished = usize::from(std::cmp::max(self.hunger_limit - self.hunger, 20));
-            health_replenished = usize::from(std::cmp::max(self.max_health - self.health, 20));
+            hunger_replenished = std::cmp::max(self.hunger_limit - self.hunger, 20);
+            health_replenished = std::cmp::max(self.max_health - self.health, 20);
         }
 
         Cake::new(
             format!("{}Cake", self.name),
-            hunger_replenished,
-            health_replenished,
+            Infinitable::Finite(hunger_replenished),
+            Infinitable::Finite(health_replenished),
             0,
         )
     }
@@ -255,19 +256,18 @@ impl Pet {
         if self.is_dead() {
             return;
         }
+        
+        if cake.get_hunger_replenished().is_finite() {
+            self.hunger = std::cmp::max(0, self.hunger - cake.get_hunger_replenished().finite().unwrap());
+        } else {
+            self.hunger = 0;
+        }
 
-        self.hunger = u8::try_from(std::cmp::max(
-            0,
-            usize::from(self.hunger) - cake.get_hunger_replenished(),
-        ))
-        .ok()
-        .unwrap();
-        self.health = u16::try_from(std::cmp::min(
-            usize::from(self.max_health),
-            usize::from(self.health) + cake.get_health_replenished(),
-        ))
-        .ok()
-        .unwrap();
+        if cake.get_health_replenished().is_finite() {
+            self.health = std::cmp::min(self.max_health, self.health + cake.get_health_replenished().finite().unwrap());
+        } else {
+            self.health = self.max_health;
+        }
     }
 
     pub fn consume(&mut self, pet: &Self) {
