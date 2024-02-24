@@ -183,7 +183,7 @@ impl Pet {
         }
     }
 
-    fn get_boredom_rate(&self) -> u8 {
+    fn get_current_boredom_rate(&self) -> u8 {
         if self.boredom > self.boredom_limit {
             return self.boredom_rate * 2;
         }
@@ -191,7 +191,7 @@ impl Pet {
         self.boredom_rate
     }
 
-    fn get_hunger_rate(&self) -> u8 {
+    fn get_current_hunger_rate(&self) -> u8 {
         let mut rate: u8 = self.hunger_rate;
 
         if self.health <= self.max_health / 4 {
