@@ -287,8 +287,6 @@ impl Pet {
         self.die(format!("Eaten by {}", name_of_consumer));
     }
 
-    pub fn can_train(&mut self) {}
-
     pub fn train(&mut self, new_sound: String) -> Option<String> {
         if self.is_dead() {
             return Option::Some(format!("{} is dead!", self.name));
